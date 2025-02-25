@@ -1,27 +1,30 @@
+import os
 import streamlit as st
-from ultralytics import YOLO
 import cv2
 import numpy as np
 from PIL import Image
 import requests
-import os
+
+# Ensure ultralytics is installed
+try:
+    from ultralytics import YOLO
+except ModuleNotFoundError:
+    st.warning("Ultralytics not found. Installing...")
+    os.system("pip install ultralytics torch torchvision")
+    from ultralytics import YOLO
 
 # GitHub raw file URL for 'best.pt'
 MODEL_URL = "https://github.com/Nishanth1812/YOLO-Streamlit-App/raw/main/best.pt"
 MODEL_PATH = "best.pt"
 
-# Function to download the model if it doesn't exist
-def download_model():
-    if not os.path.exists(MODEL_PATH):
-        st.info("Downloading YOLO model... This may take a few seconds.")
-        response = requests.get(MODEL_URL, stream=True)
-        with open(MODEL_PATH, "wb") as f:
-            for chunk in response.iter_content(chunk_size=8192):
-                f.write(chunk)
-        st.success("Model downloaded successfully!")
-
-# Download model before proceeding
-download_model()
+# Download the model if it doesn't exist
+if not os.path.exists(MODEL_PATH):
+    st.info("Downloading YOLO model... This may take a few seconds.")
+    response = requests.get(MODEL_URL, stream=True)
+    with open(MODEL_PATH, "wb") as f:
+        for chunk in response.iter_content(chunk_size=8192):
+            f.write(chunk)
+    st.success("Model downloaded successfully!")
 
 # Load YOLO model
 model = YOLO(MODEL_PATH)
