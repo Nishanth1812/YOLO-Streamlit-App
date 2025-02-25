@@ -3,48 +3,59 @@ from ultralytics import YOLO
 import cv2
 import numpy as np
 from PIL import Image
+import requests
+import os
+
+# Define model path
+MODEL_PATH = "best.pt"
+
+# GitHub Raw URL of the model file
+MODEL_URL = "https://raw.githubusercontent.com/Nishanth1812/YOLO-Streamlit-App/main/best.pt"
+
+# Function to download the model from GitHub
+def download_model():
+    with open(MODEL_PATH, "wb") as f:
+        response = requests.get(MODEL_URL, stream=True)
+        if response.status_code == 200:
+            for chunk in response.iter_content(chunk_size=1024):
+                if chunk:
+                    f.write(chunk)
+            st.success("Model downloaded successfully!")
+        else:
+            st.error("Failed to download the model. Check the URL or repo permissions.")
+
+# Download model if not present
+if not os.path.exists(MODEL_PATH):
+    st.write("Downloading YOLO model from GitHub...")
+    download_model()
 
 # Load YOLO model
-model = YOLO(r"C:\Users\Devab\OneDrive\Desktop\Coding\ML-DL\Deep Learning\Applications\YOLO Finetuning\best.pt")
+model = YOLO(MODEL_PATH)
 
 # Streamlit UI
-st.title("YOLO Object Detection App (Webcam)")
+st.title("YOLO Object Detection App")
+
+# Upload image option
+uploaded_file = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"])
 
 # Brightness slider
 brightness = st.slider("Adjust Brightness", min_value=0.5, max_value=2.0, value=1.0, step=0.1)
 
-start_button = st.button("Start Webcam")
-stop_button = st.button("Stop Webcam")
+if uploaded_file:
+    # Read image
+    image = Image.open(uploaded_file)
+    image = np.array(image)
 
-# Initialize webcam
-if start_button:
-    web_cam = cv2.VideoCapture(0)
-    web_cam.set(3, 640)
-    web_cam.set(4, 480)
+    # Adjust brightness
+    image = cv2.convertScaleAbs(image, alpha=brightness, beta=0)
 
-    frame_placeholder = st.empty()
+    # Run YOLO model on the image
+    results = model(image, conf=0.8)
+    output_image = results[0].plot()
 
-    while web_cam.isOpened():
-        success, img_frame = web_cam.read()
-        if not success:
-            break  # Exit if frame not captured properly
+    # Convert frame to RGB for Streamlit
+    output_image_rgb = cv2.cvtColor(output_image, cv2.COLOR_BGR2RGB)
+    img_pil = Image.fromarray(output_image_rgb)
 
-        # Adjust brightness
-        img_frame = cv2.convertScaleAbs(img_frame, alpha=brightness, beta=0)
-
-        # Run YOLO model on the frame
-        results = model(img_frame, conf=0.8)
-        a_frame = results[0].plot()
-
-        # Convert frame to RGB for Streamlit
-        output_frame_rgb = cv2.cvtColor(a_frame, cv2.COLOR_BGR2RGB)
-        img_pil = Image.fromarray(output_frame_rgb)
-
-        # Display the frame in Streamlit
-        frame_placeholder.image(img_pil, caption="Webcam Feed", use_column_width=True)
-
-        if stop_button:
-            break
-
-    web_cam.release()
-    cv2.destroyAllWindows()
+    # Display the image
+    st.image(img_pil, caption="Detected Objects", use_column_width=True)
