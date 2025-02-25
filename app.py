@@ -1,32 +1,33 @@
 import os
+import subprocess
+import sys
+
+# List of required packages
+required_packages = [
+    "streamlit",
+    "ultralytics==8.1.0",
+    "opencv-python",
+    "pillow",
+    "numpy",
+    "requests",
+    "torch",
+    "torchvision"
+]
+
+# Install missing packages
+for package in required_packages:
+    try:
+        __import__(package.split("==")[0])  # Import only the base module name
+    except ModuleNotFoundError:
+        print(f"{package} not found. Installing...")
+        subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+
+# Now import the installed packages
 import streamlit as st
 import cv2
 import numpy as np
 from PIL import Image
 import requests
-
-def install_missing_packages():
-    packages = {
-        "streamlit": "streamlit",
-        "ultralytics": "ultralytics==8.1.0",
-        "cv2": "opencv-python",
-        "PIL": "pillow",
-        "numpy": "numpy",
-        "requests": "requests",
-        "torch": "torch",
-        "torchvision": "torchvision"
-    }
-    
-    for module, package in packages.items():
-        try:
-            __import__(module)
-        except ModuleNotFoundError:
-            st.warning(f"{module} not found. Installing {package}...")
-            os.system(f"pip install {package}")
-
-# Install missing dependencies
-install_missing_packages()
-
 from ultralytics import YOLO
 
 # GitHub raw file URL for 'best.pt'
